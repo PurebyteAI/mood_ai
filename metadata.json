@@ -1,0 +1,6 @@
+{
+  "name": "AI Mood Mirror for Students",
+  "description": "Stateless, zero-login academic well-being mirror. Express study stress via text, sketch, or voice for instant mindful AI reflection.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

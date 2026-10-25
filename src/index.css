@@ -1,0 +1,24 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'IBM Plex Mono', monospace;
+}
+
+/* Custom styling for canvas, focus, and smooth settling */
+:root {
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+[data-theme="romantic"] {
+  color-scheme: light;
+}
+
+/* Custom styling for canvas, focus, and smooth settling */
+canvas {
+  touch-action: none;
+}

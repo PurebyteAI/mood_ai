@@ -1,0 +1,2284 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Mood Mirror — Name What You Feel</title>
+    <meta name="description" content="A calm, private reflection tool for college students. Express study stress through writing, sketching, or voice and receive an instant mindful mirror." />
+    <meta property="og:title" content="AI Mood Mirror for Students" />
+    <meta property="og:description" content="Name what you feel. Then keep moving. Zero login, nothing saved." />
+    <meta property="og:type" content="website" />
+
+    <!-- Google Fonts: Preload display & body weights -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Exo+2:wght@800&family=Public+Sans:wght@400;600;700&display=swap" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Exo+2:wght@800&family=Public+Sans:wght@400;600;700&display=swap" />
+
+    <style>
+      /* --- Design Tokens & Theme Variables --- */
+      :root {
+        --c-navy: #2C3E50;
+        --c-track: #0a0f14;
+        --c-orange: #E67E22;
+        --c-orange-hover: #d35400;
+        --c-teal: #16A085;
+        --c-cream: #F7F5EF;
+        --c-mist: #E8F0EE;
+        --c-white-90: rgba(255, 255, 255, 0.90);
+        --c-grey: #7F8C8D;
+        --c-border: #CBD5E1;
+        --c-accent-glow: rgba(230, 126, 34, 0.25);
+        --font-headline: 'Exo 2', sans-serif;
+        --font-body: 'Public Sans', sans-serif;
+
+        /* Desktop unit */
+        --u: min(calc(100vh / 800), calc(100vw / 716));
+        --shadow-text: 0 2px 14px rgba(0, 0, 0, 0.85), 0 1px 4px rgba(0, 0, 0, 0.95);
+        --shadow-headline: 0 4px 24px rgba(0, 0, 0, 0.9), 0 2px 8px rgba(0, 0, 0, 0.95);
+      }
+
+      /* Theme Overrides */
+      html[data-theme="dark"] {
+        --c-mist: #111822;
+        --c-navy: #F1F5F9;
+        --c-border: #334155;
+        --c-grey: #94A3B8;
+        --c-white-90: rgba(255, 255, 255, 0.94);
+      }
+
+      html[data-theme="romantic"] {
+        --c-mist: #FFF1F4;
+        --c-navy: #4C0519;
+        --c-orange: #E11D48;
+        --c-orange-hover: #BE123C;
+        --c-teal: #DB2777;
+        --c-border: #FECDD3;
+        --c-grey: #9F1239;
+        --c-accent-glow: rgba(225, 29, 72, 0.28);
+      }
+
+      @media (max-width: 609px), (orientation: portrait) {
+        :root {
+          /* Mobile unit */
+          --u: min(calc(100vw / 390), 1.6px);
+        }
+      }
+
+      /* Base Reset */
+      *, *::before, *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      html {
+        scroll-behavior: auto;
+        background-color: var(--c-track);
+        color: var(--c-white-90);
+        font-family: var(--font-body);
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+
+      body {
+        background-color: var(--c-track);
+        overflow-x: hidden;
+        min-height: 100vh;
+      }
+
+      /* Floating Hearts Canvas for Romantic Mode */
+      #heartsCanvas {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        pointer-events: none;
+        z-index: 90;
+        display: none;
+      }
+      html[data-theme="romantic"] #heartsCanvas {
+        display: block;
+      }
+
+      /* Top Navigation Bar */
+      .top-nav {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 68px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 clamp(16px, 3.5vw, 40px);
+        z-index: 100;
+        background: linear-gradient(to bottom, rgba(10, 15, 20, 0.88) 0%, rgba(10, 15, 20, 0.4) 75%, transparent 100%);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      }
+
+      .nav-left {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+
+      .brand-mark {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        text-decoration: none;
+        color: var(--c-cream);
+        font-family: var(--font-headline);
+        font-weight: 800;
+        font-size: 16px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        transition: opacity 0.2s;
+      }
+      .brand-mark:hover {
+        opacity: 0.85;
+      }
+
+      .brand-circle {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        border: 2px solid var(--c-orange);
+        background: radial-gradient(circle, var(--c-teal) 0%, transparent 70%);
+        box-shadow: 0 0 10px var(--c-orange);
+      }
+
+      .nav-right {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      /* Settings Button in Top Nav */
+      .btn-settings {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        height: 40px;
+        padding: 0 14px;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.08);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        color: var(--c-cream);
+        font-family: var(--font-body);
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        backdrop-filter: blur(6px);
+        transition: background 0.2s, border-color 0.2s, transform 0.15s;
+      }
+      .btn-settings:hover {
+        background: rgba(255, 255, 255, 0.16);
+        border-color: rgba(255, 255, 255, 0.3);
+        transform: translateY(-1px);
+      }
+      .btn-settings svg {
+        width: 15px;
+        height: 15px;
+        stroke: currentColor;
+      }
+
+      .lang-pill {
+        font-size: 11px;
+        text-transform: uppercase;
+        font-weight: 700;
+        background: rgba(255, 255, 255, 0.12);
+        padding: 2px 6px;
+        border-radius: 4px;
+      }
+
+      /* Primary "Start Reflecting" Nav CTA */
+      .nav-cta {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        height: 40px;
+        padding: 0 20px;
+        border-radius: 8px;
+        background: var(--c-orange);
+        color: #ffffff;
+        font-family: var(--font-body);
+        font-weight: 700;
+        font-size: 13.5px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        text-decoration: none;
+        box-shadow: 0 4px 14px var(--c-accent-glow);
+        transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+      }
+      .nav-cta:hover {
+        background: var(--c-orange-hover);
+        transform: translateY(-1px);
+        box-shadow: 0 6px 18px var(--c-accent-glow);
+      }
+      .nav-cta svg {
+        width: 14px;
+        height: 14px;
+        stroke: currentColor;
+        stroke-width: 2.5;
+        fill: none;
+      }
+
+      /* --- Track & Sticky Video Scene --- */
+      .track {
+        position: relative;
+        width: 100%;
+        background-color: var(--c-track);
+      }
+
+      .scene {
+        position: sticky;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100vh;
+        height: 100lvh;
+        overflow: hidden;
+        z-index: 1;
+      }
+
+      .scene video {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+        background: var(--c-track);
+      }
+
+      .poster-fallback {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image: url('/media/mirror-poster.jpg');
+        background-size: cover;
+        background-position: center;
+        display: none;
+      }
+
+      .scene-tint-top {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 25vh;
+        background: linear-gradient(to bottom, rgba(10, 15, 20, 0.8) 0%, transparent 100%);
+        pointer-events: none;
+      }
+
+      .scene-tint-bottom {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 28vh;
+        background: linear-gradient(to top, rgba(10, 15, 20, 0.8) 0%, transparent 100%);
+        pointer-events: none;
+      }
+
+      /* Content Layer */
+      .content {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 2;
+        pointer-events: auto;
+      }
+
+      /* --- Hero Block --- */
+      .block-intro {
+        position: absolute;
+        top: calc(130 * var(--u));
+        left: 50%;
+        transform: translateX(-50%);
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100%;
+        max-width: 92vw;
+      }
+
+      .eyebrow {
+        font-family: var(--font-body);
+        font-weight: 700;
+        font-size: calc(7.4 * var(--u));
+        letter-spacing: 0.3em;
+        color: var(--c-teal);
+        text-transform: uppercase;
+        margin-bottom: calc(14 * var(--u));
+        text-shadow: var(--shadow-text);
+      }
+
+      .headline {
+        font-family: var(--font-headline);
+        font-weight: 800;
+        text-transform: uppercase;
+        color: var(--c-cream);
+        font-size: calc(56 * var(--u));
+        line-height: calc(62 * var(--u));
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-shadow: var(--shadow-headline);
+        margin-bottom: calc(28 * var(--u));
+      }
+
+      .headline span {
+        white-space: nowrap;
+        display: block;
+      }
+
+      .hero-quote-subtitle {
+        font-family: var(--font-body);
+        font-weight: 500;
+        font-size: calc(15 * var(--u));
+        line-height: calc(23 * var(--u));
+        color: var(--c-white-90);
+        max-width: calc(640 * var(--u));
+        margin: 0 auto calc(26 * var(--u)) auto;
+        text-align: center;
+        font-style: italic;
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.75);
+        letter-spacing: 0.01em;
+      }
+
+      /* Direct Reflection Launcher Toolbar right in Hero */
+      .hero-direct-actions {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: calc(16 * var(--u));
+        margin-top: calc(8 * var(--u));
+      }
+
+      .hero-cta-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        height: 52px;
+        padding: 0 38px;
+        border-radius: 10px;
+        background: var(--c-orange);
+        color: #ffffff;
+        font-family: var(--font-body);
+        font-weight: 700;
+        font-size: 16px;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        text-decoration: none;
+        box-shadow: 0 8px 24px var(--c-accent-glow);
+        transition: all 0.2s ease;
+      }
+      .hero-cta-btn:hover {
+        background: var(--c-orange-hover);
+        transform: translateY(-2px);
+        box-shadow: 0 12px 30px var(--c-accent-glow);
+      }
+      .hero-cta-btn svg {
+        width: 18px;
+        height: 18px;
+        stroke: currentColor;
+        stroke-width: 2.5;
+        fill: none;
+      }
+
+      .mode-chips-row {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 10px;
+      }
+
+      .mode-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        height: 38px;
+        padding: 0 16px;
+        border-radius: 8px;
+        background: rgba(10, 15, 20, 0.65);
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        color: var(--c-cream);
+        font-size: 13px;
+        font-weight: 600;
+        text-decoration: none;
+        backdrop-filter: blur(8px);
+        transition: all 0.2s;
+      }
+      .mode-chip:hover {
+        background: rgba(255, 255, 255, 0.18);
+        border-color: var(--c-orange);
+        transform: translateY(-1px);
+        color: #fff;
+      }
+      .mode-chip svg {
+        width: 14px;
+        height: 14px;
+        stroke: var(--c-orange);
+        fill: none;
+      }
+
+      /* --- Five Feature Blocks --- */
+      .feature-block {
+        position: absolute;
+        width: calc(300 * var(--u));
+        background: radial-gradient(circle at top left, rgba(44, 62, 80, 0.38) 0%, rgba(10, 15, 20, 0.65) 100%);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: calc(14 * var(--u));
+        padding: calc(24 * var(--u));
+        box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5);
+        transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .feature-block:hover {
+        border-color: var(--c-orange);
+        transform: translateY(-3px);
+        box-shadow: 0 16px 42px rgba(0, 0, 0, 0.6);
+      }
+
+      .block-icon {
+        width: calc(34 * var(--u));
+        height: calc(34 * var(--u));
+        margin-bottom: calc(16 * var(--u));
+        color: var(--c-orange);
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+      }
+
+      .block-icon svg {
+        width: 100%;
+        height: 100%;
+        stroke: var(--c-orange);
+        fill: none;
+      }
+
+      .block-title {
+        font-family: var(--font-body);
+        font-weight: 700;
+        font-size: calc(19.6 * var(--u));
+        line-height: 1.15;
+        color: var(--c-cream);
+        text-transform: uppercase;
+        margin-bottom: calc(12 * var(--u));
+        text-shadow: var(--shadow-text);
+        letter-spacing: 0.03em;
+      }
+
+      .block-body {
+        font-family: var(--font-body);
+        font-weight: 400;
+        font-size: calc(12.3 * var(--u));
+        line-height: calc(15.4 * var(--u));
+        color: var(--c-white-90);
+        text-shadow: var(--shadow-text);
+      }
+
+      /* Desktop coordinates */
+      @media (min-width: 610px) and (orientation: landscape) {
+        .block-1 {
+          top: calc(1500 / 8 * 1vh);
+          right: calc(50% + (78 * var(--u)));
+        }
+        .block-2 {
+          top: calc(1500 / 8 * 1vh);
+          left: calc(50% + (78 * var(--u)));
+        }
+        .block-3 {
+          top: calc(1759 / 8 * 1vh);
+          right: calc(50% + (88 * var(--u)));
+        }
+        .block-4 {
+          top: calc(1759 / 8 * 1vh);
+          left: calc(50% + (88 * var(--u)));
+        }
+        .block-5 {
+          top: calc(2063 / 8 * 1vh);
+          left: 50%;
+          transform: translateX(-50%);
+        }
+      }
+
+      /* Mobile layout (<= 609px or portrait) */
+      @media (max-width: 609px), (orientation: portrait) {
+        .eyebrow {
+          font-size: max(14px, calc(7.4 * var(--u) * 2.2));
+          letter-spacing: 0.2em;
+        }
+        .headline {
+          font-size: max(32px, calc(56 * var(--u) * 0.9));
+          line-height: 1.15;
+        }
+        .block-intro {
+          top: 15vh;
+        }
+        .feature-block {
+          position: absolute;
+          width: calc(100vw - 36px);
+          max-width: 390px;
+          left: 50%;
+          transform: translateX(-50%);
+          padding: 20px;
+          border-radius: 12px;
+        }
+        .block-icon {
+          width: 34px;
+          height: 34px;
+          margin-bottom: 12px;
+        }
+        .block-title {
+          font-size: max(16px, calc(19.6 * var(--u)));
+          line-height: 1.2;
+          margin-bottom: 8px;
+        }
+        .block-body {
+          font-size: max(14px, calc(12.3 * var(--u)));
+          line-height: 1.45;
+        }
+        .block-1 { top: 120vh; }
+        .block-2 { top: calc(120vh + 40 * var(--u) + 160px); }
+        .block-3 { top: calc(120vh + 80 * var(--u) + 320px); }
+        .block-4 { top: calc(120vh + 120 * var(--u) + 480px); }
+        .block-5 { top: calc(120vh + 160 * var(--u) + 640px); }
+      }
+
+      /* --- Section After: section.after --- */
+      section.after {
+        position: relative;
+        z-index: 5;
+        margin-top: -34vh;
+        background: linear-gradient(to bottom, transparent 0%, var(--c-mist) 34vh, var(--c-mist) 100%);
+        color: var(--c-navy);
+        padding-top: 34vh;
+        padding-bottom: 96px;
+      }
+
+      .after-container {
+        max-width: 1120px;
+        margin: 0 auto;
+        padding: 48px clamp(20px, 4vw, 64px) 0 clamp(20px, 4vw, 64px);
+      }
+
+      .after-header {
+        display: grid;
+        grid-template-columns: 1fr 320px;
+        gap: 32px;
+        align-items: flex-end;
+        padding-bottom: 40px;
+        border-bottom: 2px solid var(--c-border);
+      }
+
+      @media (max-width: 820px) {
+        .after-header {
+          grid-template-columns: 1fr;
+          gap: 16px;
+        }
+      }
+
+      .after-heading {
+        font-family: var(--font-headline);
+        font-weight: 800;
+        font-size: clamp(34px, 4.4vw, 60px);
+        line-height: 1.05;
+        text-transform: uppercase;
+        color: var(--c-navy);
+      }
+
+      .after-heading .grey-line {
+        color: var(--c-grey);
+        display: block;
+      }
+
+      .after-header-note {
+        font-family: var(--font-body);
+        font-weight: 700;
+        font-size: 17px;
+        line-height: 1.45;
+        color: var(--c-navy);
+        opacity: 0.9;
+      }
+
+      /* Three Direct Modes Cards */
+      .direct-modes-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 24px;
+        margin-top: 48px;
+      }
+
+      .direct-mode-card {
+        background: rgba(255, 255, 255, 0.85);
+        border: 1px solid var(--c-border);
+        border-radius: 12px;
+        padding: 28px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 20px;
+        text-decoration: none;
+        color: inherit;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+        transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+      }
+      html[data-theme="dark"] .direct-mode-card {
+        background: #182230;
+      }
+      .direct-mode-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+        border-color: var(--c-orange);
+      }
+
+      .card-header-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+        background: rgba(230, 126, 34, 0.12);
+        color: var(--c-orange);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .card-header-icon svg {
+        width: 22px;
+        height: 22px;
+        stroke: currentColor;
+        stroke-width: 2;
+        fill: none;
+      }
+
+      .mode-card-title {
+        font-family: var(--font-headline);
+        font-weight: 800;
+        font-size: 20px;
+        text-transform: uppercase;
+        color: var(--c-navy);
+        margin-bottom: 8px;
+      }
+
+      .mode-card-desc {
+        font-size: 14.5px;
+        line-height: 1.55;
+        color: var(--c-grey);
+      }
+
+      .mode-card-action {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 700;
+        font-size: 14px;
+        color: var(--c-orange);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+
+      /* Step Rows */
+      .step-rows {
+        margin-top: 56px;
+      }
+
+      .step-row {
+        display: grid;
+        grid-template-columns: 260px 1fr;
+        padding: 28px 0;
+        border-bottom: 1px solid var(--c-border);
+        align-items: baseline;
+      }
+
+      @media (max-width: 720px) {
+        .step-row {
+          grid-template-columns: 1fr;
+          gap: 8px;
+          padding: 20px 0;
+        }
+      }
+
+      .step-label {
+        font-family: var(--font-headline);
+        font-weight: 800;
+        font-size: 22px;
+        text-transform: uppercase;
+        color: var(--c-navy);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .step-num {
+        font-family: var(--font-body);
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--c-orange);
+        background: rgba(230, 126, 34, 0.12);
+        padding: 2px 8px;
+        border-radius: 4px;
+      }
+
+      .step-text {
+        font-family: var(--font-body);
+        font-size: 16px;
+        line-height: 1.6;
+        color: var(--c-navy);
+        opacity: 0.88;
+      }
+
+      /* Live Interactive Demo Preview */
+      .demo-mirror-card {
+        margin-top: 56px;
+        background: rgba(255, 255, 255, 0.88);
+        border: 1px solid var(--c-border);
+        border-radius: 14px;
+        padding: 32px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+      }
+      html[data-theme="dark"] .demo-mirror-card {
+        background: #182230;
+      }
+
+      .demo-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin-bottom: 24px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid var(--c-border);
+      }
+
+      .demo-title {
+        font-family: var(--font-headline);
+        font-weight: 800;
+        font-size: 18px;
+        text-transform: uppercase;
+        color: var(--c-navy);
+      }
+
+      .demo-selector {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      .demo-tab-btn {
+        padding: 6px 14px;
+        font-size: 12px;
+        font-weight: 700;
+        border-radius: 6px;
+        background: rgba(0, 0, 0, 0.05);
+        color: var(--c-navy);
+        border: none;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      html[data-theme="dark"] .demo-tab-btn {
+        background: rgba(255, 255, 255, 0.08);
+      }
+      .demo-tab-btn.active {
+        background: var(--c-orange);
+        color: #fff;
+      }
+
+      .demo-body {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 28px;
+      }
+      @media (max-width: 768px) {
+        .demo-body {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .demo-input-box {
+        background: rgba(0, 0, 0, 0.02);
+        border: 1px solid var(--c-border);
+        border-radius: 10px;
+        padding: 20px;
+        font-style: italic;
+        font-size: 15px;
+        line-height: 1.6;
+        color: var(--c-navy);
+      }
+      html[data-theme="dark"] .demo-input-box {
+        background: rgba(255, 255, 255, 0.03);
+      }
+
+      .demo-output-box {
+        background: rgba(22, 160, 133, 0.06);
+        border: 1px solid rgba(22, 160, 133, 0.2);
+        border-radius: 10px;
+        padding: 20px;
+      }
+
+      .demo-mood-bars {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 16px;
+      }
+
+      .demo-bar-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 12.5px;
+        font-weight: 600;
+        color: var(--c-navy);
+      }
+
+      .demo-bar-track {
+        width: 140px;
+        height: 6px;
+        border-radius: 99px;
+        background: rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+      }
+      html[data-theme="dark"] .demo-bar-track {
+        background: rgba(255, 255, 255, 0.15);
+      }
+
+      .demo-bar-fill {
+        height: 100%;
+        background: var(--c-teal);
+        border-radius: 99px;
+      }
+
+      .demo-reflection-text {
+        font-size: 14px;
+        line-height: 1.65;
+        color: var(--c-navy);
+        opacity: 0.92;
+      }
+
+      /* Privacy Strip */
+      .privacy-strip {
+        margin-top: 48px;
+        padding: 20px 24px;
+        border-radius: 10px;
+        background: rgba(44, 62, 80, 0.06);
+        border: 1px solid var(--c-border);
+        font-size: 14.5px;
+        line-height: 1.55;
+        color: var(--c-navy);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 16px;
+      }
+
+      .btn-text-link {
+        color: var(--c-teal);
+        text-decoration: underline;
+        font-weight: 700;
+        background: none;
+        border: none;
+        cursor: pointer;
+        font-size: inherit;
+        font-family: inherit;
+      }
+
+      /* Bottom Primary CTA */
+      .bottom-cta-bar {
+        margin-top: 48px;
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        flex-wrap: wrap;
+      }
+
+      .btn-start-large {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        height: 52px;
+        padding: 0 40px;
+        background-color: var(--c-orange);
+        color: #ffffff;
+        font-family: var(--font-body);
+        font-weight: 700;
+        font-size: 16px;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        text-decoration: none;
+        border-radius: 8px;
+        box-shadow: 0 8px 24px var(--c-accent-glow);
+        transition: all 0.2s ease;
+      }
+      .btn-start-large:hover {
+        background-color: var(--c-orange-hover);
+        transform: translateY(-2px);
+        box-shadow: 0 12px 30px var(--c-accent-glow);
+      }
+      .btn-start-large svg {
+        width: 18px;
+        height: 18px;
+        stroke: currentColor;
+        stroke-width: 2.5;
+        fill: none;
+      }
+
+      /* Footer */
+      .footer-strip {
+        margin-top: 64px;
+        padding-top: 28px;
+        border-top: 1px solid var(--c-border);
+        font-size: 13.5px;
+        line-height: 1.6;
+        color: var(--c-grey);
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+      }
+
+      .footer-strip strong {
+        color: var(--c-navy);
+      }
+
+      /* --- Modals for Settings, Support, and Privacy --- */
+      .modal-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(8px);
+        z-index: 200;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+      .modal-backdrop.open {
+        display: flex;
+      }
+
+      .modal-box {
+        background: #ffffff;
+        color: #2C3E50;
+        border-radius: 16px;
+        max-width: 520px;
+        width: 100%;
+        max-height: 90vh;
+        overflow-y: auto;
+        padding: 32px;
+        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+        position: relative;
+        animation: modalIn 0.2s ease-out;
+      }
+      html[data-theme="dark"] .modal-box {
+        background: #182230;
+        color: #F1F5F9;
+        border: 1px solid #334155;
+      }
+      html[data-theme="romantic"] .modal-box {
+        background: #FFF1F4;
+        color: #4C0519;
+        border: 1px solid #FECDD3;
+      }
+
+      @keyframes modalIn {
+        from { opacity: 0; transform: scale(0.96) translateY(10px); }
+        to { opacity: 1; transform: scale(1) translateY(0); }
+      }
+
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 24px;
+      }
+
+      .modal-title {
+        font-family: var(--font-headline);
+        font-weight: 800;
+        font-size: 22px;
+        text-transform: uppercase;
+      }
+
+      .btn-close-modal {
+        background: none;
+        border: none;
+        font-size: 24px;
+        line-height: 1;
+        cursor: pointer;
+        color: inherit;
+        opacity: 0.6;
+        transition: opacity 0.15s;
+      }
+      .btn-close-modal:hover {
+        opacity: 1;
+      }
+
+      .setting-section {
+        margin-bottom: 24px;
+      }
+
+      .setting-label {
+        font-weight: 700;
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        margin-bottom: 12px;
+        display: block;
+      }
+
+      .theme-options-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+      }
+
+      .theme-choice-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 8px;
+        padding: 14px 10px;
+        border-radius: 10px;
+        border: 2px solid rgba(0, 0, 0, 0.1);
+        background: rgba(0, 0, 0, 0.03);
+        color: inherit;
+        font-weight: 700;
+        font-size: 13px;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+      html[data-theme="dark"] .theme-choice-btn {
+        border-color: rgba(255, 255, 255, 0.15);
+        background: rgba(255, 255, 255, 0.05);
+      }
+      .theme-choice-btn.active {
+        border-color: var(--c-orange);
+        background: rgba(230, 126, 34, 0.12);
+      }
+
+      .lang-options-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+      }
+
+      .lang-choice-btn {
+        padding: 12px 14px;
+        border-radius: 8px;
+        border: 1px solid rgba(0, 0, 0, 0.12);
+        background: rgba(0, 0, 0, 0.02);
+        color: inherit;
+        font-weight: 600;
+        font-size: 13.5px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        transition: all 0.15s;
+      }
+      html[data-theme="dark"] .lang-choice-btn {
+        border-color: rgba(255, 255, 255, 0.15);
+        background: rgba(255, 255, 255, 0.05);
+      }
+      .lang-choice-btn.active {
+        border-color: var(--c-teal);
+        background: rgba(22, 160, 133, 0.12);
+        font-weight: 700;
+      }
+
+      .campus-select-dropdown {
+        width: 100%;
+        padding: 12px 14px;
+        border-radius: 8px;
+        border: 1px solid rgba(0, 0, 0, 0.15);
+        background: inherit;
+        color: inherit;
+        font-family: inherit;
+        font-size: 14px;
+        outline: none;
+      }
+
+      /* Reduced Motion */
+      @media (prefers-reduced-motion: reduce) {
+        .scene video { display: none !important; }
+        .poster-fallback { display: block !important; }
+        #heartsCanvas { display: none !important; }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Romantic Hearts Particle Canvas -->
+    <canvas id="heartsCanvas"></canvas>
+
+    <!-- Top Navigation -->
+    <header class="top-nav">
+      <div class="nav-left">
+        <a href="/" class="brand-mark" id="brandLink">
+          <span class="brand-circle"></span>
+          <span>AI Mood Mirror</span>
+        </a>
+      </div>
+
+      <div class="nav-right">
+        <!-- Settings button -->
+        <button class="btn-settings" id="openSettingsBtn" title="Customize theme, language & campus">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+          <span id="activeThemeIcon">☀️</span>
+          <span class="lang-pill" id="activeLangLabel">EN</span>
+        </button>
+
+        <!-- Direct Reflection Launch button -->
+        <a href="/app" class="nav-cta" id="topNavStartBtn">
+          <span id="txtNavStart">Start reflecting</span>
+          <svg viewBox="0 0 24 24">
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+        </a>
+      </div>
+    </header>
+
+    <!-- Scroll Track with Sticky Video Scene -->
+    <main class="track" id="track">
+      <div class="scene" id="scene">
+        <!-- Scrubbed by scroll strictly via currentTime -->
+        <video id="mirrorVideo" playsinline muted preload="auto" poster="/media/mirror-poster.jpg">
+          <source src="/media/mirror-720.mp4" media="(max-width: 900px)" type="video/mp4" />
+          <source src="/media/mirror-1080.mp4" type="video/mp4" />
+        </video>
+        <div class="poster-fallback" id="posterFallback"></div>
+        <div class="scene-tint-top"></div>
+        <div class="scene-tint-bottom"></div>
+      </div>
+
+      <!-- Scrolling Content -->
+      <div class="content" id="content">
+        <!-- Intro Hero Block -->
+        <section class="block-intro" id="introBlock">
+          <div class="eyebrow" id="txtEyebrow">FOR STUDENTS, BY DESIGN</div>
+          <h1 class="headline" id="txtHeadline">
+            <span>PAUSE.</span>
+            <span>REFLECT.</span>
+            <span>FIND YOUR WAY.</span>
+          </h1>
+          <p class="hero-quote-subtitle" id="txtHeroSubtitle">
+            "A little space to understand your feelings, untangle your thoughts, and reconnect with yourself."
+          </p>
+
+          <!-- Direct Start Reflection Actions right in the Hero -->
+          <div class="hero-direct-actions">
+            <a href="/app" class="hero-cta-btn" id="heroStartBtn">
+              <span id="txtHeroStart">Open Reflection Window</span>
+              <svg viewBox="0 0 24 24">
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+                <polyline points="12 5 19 12 12 19"></polyline>
+              </svg>
+            </a>
+
+            <!-- Quick mode launchers directly opening the selected mode -->
+            <div class="mode-chips-row">
+              <a href="/app?mode=write" class="mode-chip" title="Directly write study reflections">
+                <svg viewBox="0 0 24 24"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                <span id="txtModeWrite">Write</span>
+              </a>
+              <a href="/app?mode=draw" class="mode-chip" title="Directly sketch and draw how it feels">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M14.31 8l5.74 9.94M9.69 8h11.48M7.38 12l5.74-9.94M9.69 16L3.95 6.06M14.31 16H2.83M16.62 12l-5.74 9.94"></path></svg>
+                <span id="txtModeDraw">Sketch</span>
+              </a>
+              <a href="/app?mode=talk" class="mode-chip" title="Directly talk through voice reflection">
+                <svg viewBox="0 0 24 24"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+                <span id="txtModeTalk">Talk</span>
+              </a>
+            </div>
+          </div>
+        </section>
+
+        <!-- Feature Block 1: Say it your way -->
+        <article class="feature-block block-1" id="block1">
+          <div class="block-icon" aria-hidden="true">
+            <svg viewBox="0 0 34 34" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 14l8-8 4 4-8 8H4v-4z" />
+              <path d="M19 5c2-1 5 0 7 2s3 5 2 7l-5 5-4-4 5-5" />
+              <path d="M26 21v2a4 4 0 0 1-8 0v-2" />
+              <line x1="22" y1="27" x2="22" y2="31" />
+              <line x1="18" y1="31" x2="26" y2="31" />
+            </svg>
+          </div>
+          <h2 class="block-title" id="fb1Title">SAY IT<br>YOUR WAY</h2>
+          <p class="block-body" id="fb1Body">Type a few lines, sketch how the week feels, or just talk. Whatever is easiest right now.</p>
+        </article>
+
+        <!-- Feature Block 2: An instant reflection -->
+        <article class="feature-block block-2" id="block2">
+          <div class="block-icon" aria-hidden="true">
+            <svg viewBox="0 0 34 34" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="17" cy="17" r="13" />
+              <path d="M12 10a11 11 0 0 1 10 3" stroke-dasharray="2 3" />
+              <line x1="10" y1="23" x2="24" y2="9" opacity="0.6" />
+            </svg>
+          </div>
+          <h2 class="block-title" id="fb2Title">AN INSTANT<br>REFLECTION</h2>
+          <p class="block-body" id="fb2Body">Get a read on your mood and a short poem, a nudge or a study-break idea within seconds.</p>
+        </article>
+
+        <!-- Feature Block 3: Mood art to keep -->
+        <article class="feature-block block-3" id="block3">
+          <div class="block-icon" aria-hidden="true">
+            <svg viewBox="0 0 34 34" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="5" y="5" width="24" height="24" rx="4" />
+              <path d="M5 21l6-6a3 3 0 0 1 4 0l8 8" />
+              <path d="M19 19l2-2a2.5 2.5 0 0 1 3.5 0L29 21" />
+              <circle cx="12" cy="12" r="2" />
+            </svg>
+          </div>
+          <h2 class="block-title" id="fb3Title">MOOD ART<br>TO KEEP</h2>
+          <p class="block-body" id="fb3Body">Turn how you feel into a unique image you can download or share.</p>
+        </article>
+
+        <!-- Feature Block 4: No login. Nothing saved. -->
+        <article class="feature-block block-4" id="block4">
+          <div class="block-icon" aria-hidden="true">
+            <svg viewBox="0 0 34 34" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="17" cy="17" r="14" stroke-dasharray="3 3" opacity="0.8" />
+              <rect x="11" y="14" width="12" height="10" rx="2" />
+              <path d="M13 14v-3a4 4 0 0 1 8 0v3" />
+              <circle cx="17" cy="19" r="1.5" />
+            </svg>
+          </div>
+          <h2 class="block-title" id="fb4Title">NO LOGIN.<br>NOTHING SAVED.</h2>
+          <p class="block-body" id="fb4Body">No account, no history on our servers. Close the tab and your session is gone.</p>
+        </article>
+
+        <!-- Feature Block 5: Made for student life -->
+        <article class="feature-block block-5" id="block5">
+          <div class="block-icon" aria-hidden="true">
+            <svg viewBox="0 0 34 34" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M4 8a4 4 0 0 1 4-4h8v24H8a4 4 0 0 0-4 4V8z" />
+              <path d="M30 8a4 4 0 0 0-4-4h-8v24h8a4 4 0 0 1 4 4V8z" />
+              <line x1="8" y1="9" x2="13" y2="9" />
+              <line x1="8" y1="14" x2="13" y2="14" />
+              <line x1="21" y1="9" x2="26" y2="9" />
+            </svg>
+          </div>
+          <h2 class="block-title" id="fb5Title">MADE FOR<br>STUDENT LIFE</h2>
+          <p class="block-body" id="fb5Body">Built around exams, deadlines and group work. A reflection tool, not a substitute for professional support.</p>
+        </article>
+      </div>
+    </main>
+
+    <!-- Section After: Direct Reflections & How It Works -->
+    <section class="after" id="after">
+      <div class="after-container">
+        <!-- Header -->
+        <div class="after-header">
+          <h2 class="after-heading" id="txtHowItWorksHeading">
+            HOW IT WORKS
+            <span class="grey-line" id="txtHowItWorksSub">IN 60 SECONDS.</span>
+          </h2>
+          <p class="after-header-note" id="txtHowItWorksNote">
+            Three steps, about a minute, and no sign-up. Pick how you want to express yourself:
+          </p>
+        </div>
+
+        <!-- Direct Reflection Launch Cards -->
+        <div class="direct-modes-grid">
+          <a href="/app?mode=write" class="direct-mode-card">
+            <div>
+              <div class="card-header-icon">
+                <svg viewBox="0 0 24 24"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+              </div>
+              <h3 class="mode-card-title" id="cardWriteTitle">Write & Dictate</h3>
+              <p class="mode-card-desc" id="cardWriteDesc">Type what's weighing on you or dictate out loud with live speech-to-text. Express feelings about finals, deadlines, or group friction.</p>
+            </div>
+            <div class="mode-card-action">
+              <span id="cardWriteAction">Open Write & Dictate &rarr;</span>
+            </div>
+          </a>
+
+          <a href="/app?mode=draw" class="direct-mode-card">
+            <div>
+              <div class="card-header-icon">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"></circle><path d="M14.31 8l5.74 9.94M9.69 8h11.48M7.38 12l5.74-9.94M9.69 16L3.95 6.06M14.31 16H2.83M16.62 12l-5.74 9.94"></path></svg>
+              </div>
+              <h3 class="mode-card-title" id="cardDrawTitle">Sketch & Draw</h3>
+              <p class="mode-card-desc" id="cardDrawDesc">Sometimes pressure has no words. Pick colors, scribble, doodle shapes, and let AI read the feeling.</p>
+            </div>
+            <div class="mode-card-action">
+              <span id="cardDrawAction">Open Canvas &rarr;</span>
+            </div>
+          </a>
+
+          <a href="/app?mode=talk" class="direct-mode-card">
+            <div>
+              <div class="card-header-icon" style="background: radial-gradient(circle, #10b981 0%, #0284c7 50%, #f97316 100%); display: flex; align-items: center; justify-content: center; box-shadow: 0 0 14px rgba(6, 182, 212, 0.4);">
+                <span style="display: flex; gap: 3px; align-items: center; justify-content: center;">
+                  <span style="width: 2.5px; height: 10px; background: #ffffff; border-radius: 99px; box-shadow: 0 0 4px #ffffff;"></span>
+                  <span style="width: 2.5px; height: 10px; background: #ffffff; border-radius: 99px; box-shadow: 0 0 4px #ffffff;"></span>
+                </span>
+              </div>
+              <h3 class="mode-card-title" id="cardTalkTitle">1-to-1 Voice Companion</h3>
+              <p class="mode-card-desc" id="cardTalkDesc">A calm spoken conversation with a supportive peer friend. Turn-aware listening, cognitive reframing, and tiny study resets.</p>
+            </div>
+            <div class="mode-card-action">
+              <span id="cardTalkAction">Talk with Companion &rarr;</span>
+            </div>
+          </a>
+        </div>
+
+        <!-- Three Steps Rows -->
+        <div class="step-rows">
+          <div class="step-row">
+            <div class="step-label">
+              <span class="step-num">01</span>
+              <span id="step1Label">Express</span>
+            </div>
+            <div class="step-text" id="step1Text">
+              Choose Write, Draw or Talk and pick your study context (exams, deadlines, presentations, or general student life).
+            </div>
+          </div>
+
+          <div class="step-row">
+            <div class="step-label">
+              <span class="step-num">02</span>
+              <span id="step2Label">Reflect</span>
+            </div>
+            <div class="step-text" id="step2Text">
+              See your emotional distribution bars and an honest reflection: perspective reframing, compassionate validation, and a 3-minute study break tip.
+            </div>
+          </div>
+
+          <div class="step-row">
+            <div class="step-label">
+              <span class="step-num">03</span>
+              <span id="step3Label">Keep or let go</span>
+            </div>
+            <div class="step-text" id="step3Text">
+              Download your custom mood card and emotional progression chart, or close the tab and everything is permanently wiped.
+            </div>
+          </div>
+        </div>
+
+        <!-- Interactive Live Sample Mirror Card -->
+        <div class="demo-mirror-card">
+          <div class="demo-header">
+            <div class="demo-title" id="demoTitle">Live Reflection Example</div>
+            <div class="demo-selector">
+              <button class="demo-tab-btn active" onclick="switchDemo(0)">Exam Overwhelm</button>
+              <button class="demo-tab-btn" onclick="switchDemo(1)">Group Teammate Friction</button>
+              <button class="demo-tab-btn" onclick="switchDemo(2)">Presentation Imposter Syndrome</button>
+            </div>
+          </div>
+
+          <div class="demo-body">
+            <div class="demo-input-box" id="demoInputBox">
+              "I have been staring at this chapter for four hours straight. Nothing is clicking and my 9am midterm is in 8 hours. I feel completely overwhelmed and behind everyone else."
+            </div>
+
+            <div class="demo-output-box">
+              <div class="demo-mood-bars">
+                <div class="demo-bar-item">
+                  <span id="bar1Label">Overwhelmed</span>
+                  <div class="demo-bar-track"><div class="demo-bar-fill" id="bar1Fill" style="width: 82%;"></div></div>
+                </div>
+                <div class="demo-bar-item">
+                  <span id="bar2Label">Anxious</span>
+                  <div class="demo-bar-track"><div class="demo-bar-fill" id="bar2Fill" style="width: 68%;"></div></div>
+                </div>
+                <div class="demo-bar-item">
+                  <span id="bar3Label">Determination</span>
+                  <div class="demo-bar-track"><div class="demo-bar-fill" id="bar3Fill" style="width: 45%; background: var(--c-orange);"></div></div>
+                </div>
+              </div>
+
+              <div class="demo-reflection-text" id="demoReflectionText">
+                "Fatigue masquerades as inadequacy. When your brain is saturated, continuing to stare at the page yields negative returns. Step away for 12 minutes, drink cold water, and review only your summary sheet. You know more than panic tells you."
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Privacy Strip -->
+        <div class="privacy-strip">
+          <div>
+            <span id="txtPrivacyLine">We do not store what you write, draw or say. AI providers process it in transit only.</span>
+          </div>
+          <button class="btn-text-link" id="openPrivacyModalBtn">
+            View privacy architecture &rarr;
+          </button>
+        </div>
+
+        <!-- Bottom Primary CTA -->
+        <div class="bottom-cta-bar">
+          <a href="/app" class="btn-start-large" id="bottomStartBtn">
+            <span id="txtBottomStart">Start reflecting now</span>
+            <svg viewBox="0 0 24 24">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+              <polyline points="12 5 19 12 12 19"></polyline>
+            </svg>
+          </a>
+
+          <button class="btn-text-link" id="openSupportModalBtn" style="color: #e11d48; font-weight: 700;">
+            Crisis & Student Support Resources &nearr;
+          </button>
+        </div>
+
+        <!-- Footer -->
+        <footer class="footer-strip">
+          <div>
+            <span id="txtFooterNotice">AI Mood Mirror is a reflection tool, not therapy or medical advice. Crisis resources:</span> 
+            <strong>988</strong> (US), <strong>111</strong> (UK).
+          </div>
+          <div>
+            <button class="btn-text-link" onclick="openSettings()" style="font-size: 13px;">Settings & Language</button>
+          </div>
+        </footer>
+      </div>
+    </section>
+
+    <!-- Settings Modal -->
+    <div class="modal-backdrop" id="settingsModal">
+      <div class="modal-box">
+        <div class="modal-header">
+          <h3 class="modal-title" id="mSettingsTitle">Settings</h3>
+          <button class="btn-close-modal" onclick="closeModals()">&times;</button>
+        </div>
+
+        <!-- Appearance -->
+        <div class="setting-section">
+          <label class="setting-label" id="mThemeLabel">Appearance</label>
+          <div class="theme-options-grid">
+            <button class="theme-choice-btn active" id="btnThemeLight" onclick="setTheme('light')">
+              <span>☀️</span>
+              <span id="mThemeLight">Light</span>
+            </button>
+            <button class="theme-choice-btn" id="btnThemeDark" onclick="setTheme('dark')">
+              <span>🌙</span>
+              <span id="mThemeDark">Dark</span>
+            </button>
+            <button class="theme-choice-btn" id="btnThemeRomantic" onclick="setTheme('romantic')">
+              <span>💖</span>
+              <span id="mThemeRomantic">Romantic</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Language -->
+        <div class="setting-section">
+          <label class="setting-label" id="mLangLabel">Language</label>
+          <div class="lang-options-grid">
+            <button class="lang-choice-btn active" id="btnLangEn" onclick="setLanguage('en')">
+              <span>English</span>
+              <span class="lang-pill">EN</span>
+            </button>
+            <button class="lang-choice-btn" id="btnLangFr" onclick="setLanguage('fr')">
+              <span>Français</span>
+              <span class="lang-pill">FR</span>
+            </button>
+            <button class="lang-choice-btn" id="btnLangEs" onclick="setLanguage('es')">
+              <span>Español</span>
+              <span class="lang-pill">ES</span>
+            </button>
+            <button class="lang-choice-btn" id="btnLangIt" onclick="setLanguage('it')">
+              <span>Italiano</span>
+              <span class="lang-pill">IT</span>
+            </button>
+            <button class="lang-choice-btn" id="btnLangDe" onclick="setLanguage('de')">
+              <span>Deutsch</span>
+              <span class="lang-pill">DE</span>
+            </button>
+            <button class="lang-choice-btn" id="btnLangZh" onclick="setLanguage('zh')">
+              <span>中文 (Mandarin)</span>
+              <span class="lang-pill">ZH</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Campus Preset -->
+        <div class="setting-section">
+          <label class="setting-label" id="mCampusLabel">Campus Support Preset</label>
+          <select class="campus-select-dropdown" id="campusSelect" onchange="changeCampus(this.value)">
+            <option value="">General / Worldwide</option>
+            <option value="mit">MIT (Student Mental Health)</option>
+            <option value="oxford">University of Oxford (Counselling Service)</option>
+            <option value="stanford">Stanford University (CAPS)</option>
+            <option value="berkeley">UC Berkeley (Tang Center)</option>
+            <option value="cambridge">University of Cambridge (Counselling)</option>
+          </select>
+        </div>
+
+        <div style="margin-top: 24px;">
+          <a href="/app" class="btn-start-large" style="width: 100%;" id="modalReflectBtn">
+            <span>Start Reflecting with these settings &rarr;</span>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Crisis Support Modal -->
+    <div class="modal-backdrop" id="supportModal">
+      <div class="modal-box">
+        <div class="modal-header">
+          <h3 class="modal-title" style="color: #e11d48;">Crisis Support</h3>
+          <button class="btn-close-modal" onclick="closeModals()">&times;</button>
+        </div>
+
+        <p style="font-size: 14.5px; line-height: 1.6; margin-bottom: 20px;">
+          AI Mood Mirror is an introspective tool, not therapy or professional crisis intervention. If you are experiencing acute distress, please reach out to dedicated counselors right now:
+        </p>
+
+        <div style="display: flex; flex-direction: column; gap: 14px; margin-bottom: 24px;">
+          <div style="padding: 14px; border-radius: 8px; background: rgba(225, 29, 72, 0.08); border: 1px solid rgba(225, 29, 72, 0.2);">
+            <strong>US 988 Suicide & Crisis Lifeline</strong>
+            <p style="font-size: 13.5px; margin-top: 4px;">Call or text <strong>988</strong> anytime, 24/7. Free & confidential.</p>
+          </div>
+
+          <div style="padding: 14px; border-radius: 8px; background: rgba(0, 0, 0, 0.04);">
+            <strong>Crisis Text Line</strong>
+            <p style="font-size: 13.5px; margin-top: 4px;">Text <strong>HOME</strong> to <strong>741741</strong> (US/UK) to connect with a Crisis Volunteer.</p>
+          </div>
+
+          <div style="padding: 14px; border-radius: 8px; background: rgba(0, 0, 0, 0.04);">
+            <strong>UK NHS 111 Mental Health</strong>
+            <p style="font-size: 13.5px; margin-top: 4px;">Call <strong>111</strong> in the UK for urgent medical and mental health guidance.</p>
+          </div>
+        </div>
+
+        <button class="btn-start-large" style="width: 100%;" onclick="closeModals()">
+          Return to Reflection
+        </button>
+      </div>
+    </div>
+
+    <!-- Privacy Architecture Modal -->
+    <div class="modal-backdrop" id="privacyModal">
+      <div class="modal-box">
+        <div class="modal-header">
+          <h3 class="modal-title">Zero-Storage Architecture</h3>
+          <button class="btn-close-modal" onclick="closeModals()">&times;</button>
+        </div>
+
+        <p style="font-size: 14.5px; line-height: 1.6; margin-bottom: 16px;">
+          Your reflections belong to you alone. We engineered AI Mood Mirror without user accounts, databases, or tracking:
+        </p>
+
+        <ul style="padding-left: 20px; font-size: 14px; line-height: 1.7; margin-bottom: 24px;">
+          <li><strong>No User Account:</strong> You never register, log in, or give your identity.</li>
+          <li><strong>Ephemeral Memory:</strong> Your written thoughts and drawings live solely inside your active browser tab's RAM.</li>
+          <li><strong>Zero Persistent Storage:</strong> When you close the browser tab, your session is erased permanently.</li>
+          <li><strong>Encrypted in Transit:</strong> Communication with AI analysis engines happens via stateless HTTPS requests.</li>
+        </ul>
+
+        <button class="btn-start-large" style="width: 100%;" onclick="closeModals()">
+          Got It
+        </button>
+      </div>
+    </div>
+
+    <!-- Scripts: Scroll-to-Video Scrubbing + Themes + Multilingual Engine -->
+    <script>
+      // Translations dictionary for the landing page
+      const I18N = {
+        en: {
+          eyebrow: "FOR STUDENTS, BY DESIGN",
+          headline: ["PAUSE.", "REFLECT.", "FIND YOUR WAY."],
+          heroSubtitle: "A little space to understand your feelings, untangle your thoughts, and reconnect with yourself.",
+          heroStart: "Open Reflection Window",
+          navStart: "Start reflecting",
+          modeWrite: "Write",
+          modeDraw: "Sketch",
+          modeTalk: "Talk",
+          fb1Title: "SAY IT<br>YOUR WAY",
+          fb1Body: "Type a few lines, sketch how the week feels, or just talk. Whatever is easiest right now.",
+          fb2Title: "AN INSTANT<br>REFLECTION",
+          fb2Body: "Get a read on your mood and a short poem, a nudge or a study-break idea within seconds.",
+          fb3Title: "MOOD ART<br>TO KEEP",
+          fb3Body: "Turn how you feel into a unique image you can download or share.",
+          fb4Title: "NO LOGIN.<br>NOTHING SAVED.",
+          fb4Body: "No account, no history on our servers. Close the tab and your session is gone.",
+          fb5Title: "MADE FOR<br>STUDENT LIFE",
+          fb5Body: "Built around exams, deadlines and group work. A reflection tool, not a substitute for professional support.",
+          howItWorksHeading: "HOW IT WORKS",
+          howItWorksSub: "IN 60 SECONDS.",
+          howItWorksNote: "Three steps, about a minute, and no sign-up. Pick how you want to express yourself:",
+          cardWriteTitle: "Write & Dictate",
+          cardWriteDesc: "Type your thoughts or speak out loud with live voice-to-text. Vent about exams, deadlines, or burnout.",
+          cardWriteAction: "Open Write & Dictate →",
+          cardDrawTitle: "Sketch & Draw",
+          cardDrawDesc: "Sometimes pressure has no words. Pick colors, scribble, doodle shapes, and let AI read the feeling.",
+          cardDrawAction: "Open Canvas →",
+          cardTalkTitle: "1-to-1 Voice Companion",
+          cardTalkDesc: "A calm spoken conversation with a supportive friend. Turn-aware listening, cognitive reframing, and tiny resets.",
+          cardTalkAction: "Talk with Companion →",
+          step1Label: "Express",
+          step1Text: "Choose Write, Draw or Talk and pick your study context (exams, deadlines, presentations, or general student life).",
+          step2Label: "Reflect",
+          step2Text: "See your emotional distribution bars and an honest reflection: perspective reframing, compassionate validation, and a 3-minute study break tip.",
+          step3Label: "Keep or let go",
+          step3Text: "Download your custom mood card and emotional progression chart, or close the tab and everything is permanently wiped.",
+          privacyLine: "We do not store what you write, draw or say. AI providers process it in transit only.",
+          bottomStart: "Start reflecting now",
+        },
+        fr: {
+          eyebrow: "POUR LES ÉTUDIANTS, PAR DESIGN",
+          headline: ["PAUSE.", "RÉFLÉCHISSEZ.", "TROUVEZ VOTRE VOIE."],
+          heroSubtitle: "Un petit espace pour comprendre vos émotions, démêler vos pensées et vous reconnecter avec vous-même.",
+          heroStart: "Ouvrir l'Espace Réflexion",
+          navStart: "Commencer à réfléchir",
+          modeWrite: "Écrire",
+          modeDraw: "Dessiner",
+          modeTalk: "Parler",
+          fb1Title: "EXPRIMEZ-VOUS<br>À VOTRE FAÇON",
+          fb1Body: "Écrivez quelques lignes, dessinez votre ressenti de la semaine ou parlez librement.",
+          fb2Title: "UNE RÉFLEXION<br>INSTANTANÉE",
+          fb2Body: "Obtenez une lecture de votre humeur, un court poème et un conseil d'étude en quelques secondes.",
+          fb3Title: "DE L'ART ÉMOTIONNEL<br>À GARDER",
+          fb3Body: "Transformez ce que vous ressentez en une œuvre artistique unique à télécharger ou partager.",
+          fb4Title: "SANS COMPTE.<br>RIEN N'EST ENREGISTRÉ.",
+          fb4Body: "Aucun compte, aucun historique sur nos serveurs. Fermez l'onglet et tout disparaît.",
+          fb5Title: "CONÇU POUR LA VIE<br>ÉTUDIANTE",
+          fb5Body: "Conçu autour des examens, des dates limites et des projets de groupe. Un outil d'introspection.",
+          howItWorksHeading: "COMMENT ÇA MARCHE",
+          howItWorksSub: "EN 60 SECONDES.",
+          howItWorksNote: "Trois étapes, environ une minute, sans inscription. Choisissez comment vous exprimer :",
+          cardWriteTitle: "Réflexion Écrite",
+          cardWriteDesc: "Écrivez ce qui vous pèse : partiels, soutenance ou travail d'équipe difficile.",
+          cardWriteAction: "Ouvrir l'Écriture →",
+          cardDrawTitle: "Croquis & Dessin",
+          cardDrawDesc: "Quand les mots manquent. Choisissez des couleurs, griffonnez et laissez l'IA décrypter vos émotions.",
+          cardDrawAction: "Ouvrir le Dessin →",
+          cardTalkTitle: "Réflexion Vocale",
+          cardTalkDesc: "Parlez pendant une marche. Exprimez-vous spontanément et recevez une réponse audio bienveillante.",
+          cardTalkAction: "Ouvrir la Voix →",
+          step1Label: "Exprimer",
+          step1Text: "Choisissez Écrire, Dessiner ou Parler et sélectionnez votre contexte d'études.",
+          step2Label: "Réfléchir",
+          step2Text: "Découvrez vos jauges émotionnelles et une réflexion sincère avec perspective et conseils.",
+          step3Label: "Garder ou effacer",
+          step3Text: "Téléchargez votre carte ou fermez l'onglet : vos données sont effacées pour toujours.",
+          privacyLine: "Nous ne stockons aucun écrit, dessin ou enregistrement. Traitement éphémère garanti.",
+          bottomStart: "Commencer la réflexion maintenant",
+        },
+        es: {
+          eyebrow: "PARA ESTUDIANTES, POR DISEÑO",
+          headline: ["PAUSA.", "REFLEXIONA.", "ENCUENTRA TU CAMINO."],
+          heroSubtitle: "Un pequeño espacio para comprender tus sentimientos, desenredar tus pensamientos y reconectar contigo mismo.",
+          heroStart: "Abrir Espacio de Reflexión",
+          navStart: "Comenzar a reflexionar",
+          modeWrite: "Escribir",
+          modeDraw: "Dibujar",
+          modeTalk: "Hablar",
+          fb1Title: "A TU MANERA",
+          fb1Body: "Escribe unas líneas, dibuja cómo te sientes o simplemente habla con calma.",
+          fb2Title: "REFLEXIÓN<br>AL INSTANTE",
+          fb2Body: "Obtén una lectura de tu estado de ánimo, un poema corto o un consejo de estudio en segundos.",
+          fb3Title: "ARTE DE TU ÁNIMO<br>PARA GUARDAR",
+          fb3Body: "Convierte tus emociones en una imagen generativa única para descargar o compartir.",
+          fb4Title: "SIN INICIO DE SESIÓN.<br>NADA GUARDADO.",
+          fb4Body: "Sin cuentas ni historial en servidores. Cierra la pestaña y tu sesión desaparece por completo.",
+          fb5Title: "HECHO PARA LA<br>VIDA UNIVERSITARIA",
+          fb5Body: "Pensado para exámenes, entregas y trabajos en grupo. Una herramienta reflexiva.",
+          howItWorksHeading: "CÓMO FUNCIONA",
+          howItWorksSub: "EN 60 SEGUNDOS.",
+          howItWorksNote: "Tres pasos, un minuto y sin registro. Elige cómo quieres expresarte:",
+          cardWriteTitle: "Escribir Reflexión",
+          cardWriteDesc: "Escribe lo que te abruma: exámenes finales, fechas límite o dudas académicas.",
+          cardWriteAction: "Abrir Escritura →",
+          cardDrawTitle: "Dibujar y Trazar",
+          cardDrawDesc: "Cuando las palabras no bastan. Garabatea trazos, formas y colores para reflejar tu ánimo.",
+          cardDrawAction: "Abrir Lienzo →",
+          cardTalkTitle: "Reflexión por Voz",
+          cardTalkDesc: "Habla con libertad durante una pausa de estudio y escucha una respuesta empática.",
+          cardTalkAction: "Abrir Voz →",
+          step1Label: "Expresar",
+          step1Text: "Elige Escribir, Dibujar o Hablar y selecciona tu contexto universitario.",
+          step2Label: "Reflejar",
+          step2Text: "Mira tus barras de emociones y recibe un poema o consejo de estudio reconfortante.",
+          step3Label: "Guardar o soltar",
+          step3Text: "Descarga tu tarjeta o cierra la pestaña para borrar todo de forma permanente.",
+          privacyLine: "No guardamos tus textos, dibujos ni audios. Todo es procesado únicamente en tránsito.",
+          bottomStart: "Comenzar a reflexionar ahora",
+        },
+        it: {
+          eyebrow: "PER STUDENTI, DI PROGETTO",
+          headline: ["PAUSA.", "RIFLETTI.", "TROVA LA TUA STRADA."],
+          heroSubtitle: "Un piccolo spazio per comprendere i tuoi sentimenti, districare i tuoi pensieri e riconnetterti con te stesso.",
+          heroStart: "Apri Finestra di Riflessione",
+          navStart: "Inizia a riflettere",
+          modeWrite: "Scrivi",
+          modeDraw: "Disegna",
+          modeTalk: "Parla",
+          fb1Title: "ESPRIMI A MODO TUO",
+          fb1Body: "Scrivi qualche riga, disegna ciò che provi o semplicemente parla liberamente.",
+          fb2Title: "UN RISCONTRO<br>IMMEDIATO",
+          fb2Body: "Ottieni un'analisi del tuo umore, una breve poesia e un consiglio per lo studio.",
+          fb3Title: "ARTE EMOTIVA<br>DA CONSERVARE",
+          fb3Body: "Trasforma le tue emozioni in un'opera d'arte unica da scaricare o conservare.",
+          fb4Title: "NESSUN ACCOUNT.<br>NULLA DI SALVATO.",
+          fb4Body: "Nessuna registrazione, nessuna cronologia su server. Chiudi la scheda e scompare tutto.",
+          fb5Title: "PENSATO PER LA<br>VITA DEGLI STUDENTI",
+          fb5Body: "Costruito intorno a esami, scadenze e progetti di gruppo. Uno strumento di riflessione.",
+          howItWorksHeading: "COME FUNZIONA",
+          howItWorksSub: "IN 60 SECONDI.",
+          howItWorksNote: "Tre passaggi, un minuto, nessuna registrazione. Scegli come esprimerti:",
+          cardWriteTitle: "Riflessione Scritta",
+          cardWriteDesc: "Scrivi cosa ti preoccupa: esami imminenti, scadenze o ansia da prestazione.",
+          cardWriteAction: "Apri Scrittura →",
+          cardDrawTitle: "Schizzo & Disegno",
+          cardDrawDesc: "A volte le parole mancano. Usa colori e tratti per esprimere il tuo stato d'animo.",
+          cardDrawAction: "Apri Telaio →",
+          cardTalkTitle: "Riflessione Vocale",
+          cardTalkDesc: "Parla a voce alta durante una pausa studio e ascolta un riscontro empatico.",
+          cardTalkAction: "Apri Voce →",
+          step1Label: "Esprimi",
+          step1Text: "Scegli Scrivi, Disegna o Parla e indica il contesto accademico.",
+          step2Label: "Rifletti",
+          step2Text: "Osserva le percentuali delle tue emozioni e ricevi consigli rassicuranti.",
+          step3Label: "Conserva o lascia andare",
+          step3Text: "Scarica la tua scheda o chiudi la scheda del browser per cancellare tutto.",
+          privacyLine: "Non salviamo ciò che scrivi, disegni o dici. Dati elaborati solo in transito.",
+          bottomStart: "Inizia a riflettere ora",
+        },
+        de: {
+          eyebrow: "FÜR STUDIERENDE, MIT SYSTEM",
+          headline: ["INNEHALTEN.", "REFLEKTIEREN.", "DEINEN WEG FINDEN."],
+          heroSubtitle: "Ein kleiner Raum, um deine Gefühle zu verstehen, Gedanken zu ordnen und dich wieder mit dir selbst zu verbinden.",
+          heroStart: "Reflexionsfenster öffnen",
+          navStart: "Jetzt reflektieren",
+          modeWrite: "Schreiben",
+          modeDraw: "Zeichnen",
+          modeTalk: "Sprechen",
+          fb1Title: "DRÜCKE DICH AUS",
+          fb1Body: "Tippe ein paar Zeilen, skizziere deine Woche oder sprich frei heraus.",
+          fb2Title: "SOFORTIGE<br>SPIEGELUNG",
+          fb2Body: "Erhalte innerhalb von Sekunden eine Einschätzung deiner Stimmung und einen Lerntipp.",
+          fb3Title: "STIMMUNGSKUNST<br>ZUM BEHALTEN",
+          fb3Body: "Verwandle Gefühle in ein einzigartiges Bild, das du herunterladen kannst.",
+          fb4Title: "KEIN LOGIN.<br>NICHTS GESPEICHERT.",
+          fb4Body: "Kein Benutzerkonto, kein Serververlauf. Schließe den Tab und alles ist gelöscht.",
+          fb5Title: "FÜRS STUDIUM<br>GEMACHT",
+          fb5Body: "Auf Klausuren, Fristen und Gruppenarbeiten abgestimmt. Ein Tool zur Reflexion.",
+          howItWorksHeading: "WIE ES FUNKTIONIERT",
+          howItWorksSub: "IN 60 SEKUNDEN.",
+          howItWorksNote: "Drei Schritte, ca. eine Minute, keine Registrierung. Wähle deinen Weg:",
+          cardWriteTitle: "Schriftliche Reflexion",
+          cardWriteDesc: "Schreibe auf, was dich belastet: Prüfungen, Abgabetermine oder Gruppenstress.",
+          cardWriteAction: "Schreibfenster öffnen →",
+          cardDrawTitle: "Skizzieren & Zeichnen",
+          cardDrawDesc: "Manchmal fehlen die Worte. Wähle Farben und Formen, um Druck abzubauen.",
+          cardDrawAction: "Zeichenfläche öffnen →",
+          cardTalkTitle: "Sprachreflexion",
+          cardTalkDesc: "Sprich während eines Spaziergangs und erhalte eine beruhigende Audio-Reflexion.",
+          cardTalkAction: "Sprachfenster öffnen →",
+          step1Label: "Ausdrücken",
+          step1Text: "Wähle Schreiben, Zeichnen oder Sprechen und gib deinen Studienkontext an.",
+          step2Label: "Reflektieren",
+          step2Text: "Sieh deine Gefühlsbalken und lies einen ehrlichen, empathischen Ratgeber.",
+          step3Label: "Behalten oder loslassen",
+          step3Text: "Lade deine Stimmungs-Karte herunter oder schließe den Tab – alles ist weg.",
+          privacyLine: "Wir speichern keine Texte, Zeichnungen oder Audios. Verarbeitung nur im Transit.",
+          bottomStart: "Jetzt Reflexion starten",
+        },
+        zh: {
+          eyebrow: "专为学生量身设计",
+          headline: ["停下脚步", "静心观照", "找寻前路"],
+          heroSubtitle: "一个专属的静心角落，倾听心声、梳理杂绪，重新找回内心的从容。",
+          heroStart: "直接开启反思窗口",
+          navStart: "开始反思",
+          modeWrite: "写文字",
+          modeDraw: "画情绪",
+          modeTalk: "倾诉语音",
+          fb1Title: "随心表达",
+          fb1Body: "写几句话、随手涂鸦一星期的心情，或者开启语音。选现在最轻松的方式。",
+          fb2Title: "即刻心境<br>镜像反馈",
+          fb2Body: "数秒内洞察你的情绪分布，获得贴心的微型诗歌、鼓励或学习减压建议。",
+          fb3Title: "独一无二<br>情绪画作",
+          fb3Body: "把当下的压力与感受转化为专属生成艺术，可自由保存或分享。",
+          fb4Title: "无需登录<br>不存数据",
+          fb4Body: "无需账号，服务器绝不持久化任何内容。关闭网页标签页，一切瞬间清零。",
+          fb5Title: "贴合校园<br>课业生活",
+          fb5Body: "围绕考前焦虑、Deadline 赶工和小组协作设计。属于你的自我关怀镜像。",
+          howItWorksHeading: "运作机制",
+          howItWorksSub: "60秒快速指南",
+          howItWorksNote: "三个简单步骤，大约一分钟，无需注册。选择你想抒发的方式：",
+          cardWriteTitle: "文字倾诉",
+          cardWriteDesc: "写下让你喘不过气的琐事：期末考试、导师压力或拖延的论文。",
+          cardWriteAction: "开启文字窗口 →",
+          cardDrawTitle: "自由涂鸦",
+          cardDrawDesc: "有时烦躁无法用言语形容。用色彩和线条表达，让 AI 解读色彩背后的心境。",
+          cardDrawAction: "开启画板 →",
+          cardTalkTitle: "语音倾诉",
+          cardTalkDesc: "在校园散步时随心倾诉，获得温柔而有洞察的音频反馈。",
+          cardTalkAction: "开启语音窗口 →",
+          step1Label: "自由表达",
+          step1Text: "选择书写、绘画或说话，并选择当前的学业情景（考试、截止日、答辩等）。",
+          step2Label: "心境镜像",
+          step2Text: "查看情绪光谱条形图，阅读温和客观的视角转换与 3 分钟解压指南。",
+          step3Label: "留存或释怀",
+          step3Text: "下载情绪纪念卡，或者直接关闭页面——所有记录立刻永久消失。",
+          privacyLine: "我们绝不储存你写下、画出或说出的内容。AI 服务仅在传输中即时处理。",
+          bottomStart: "立即进入反思空间",
+        }
+      };
+
+      // Real study examples for interactive demo
+      const DEMOS = [
+        {
+          input: `"I have been staring at this chapter for four hours straight. Nothing is clicking and my 9am midterm is in 8 hours. I feel completely overwhelmed and behind everyone else."`,
+          bars: [
+            { name: "Overwhelmed", pct: "82%", fill: "var(--c-teal)" },
+            { name: "Anxious", pct: "68%", fill: "var(--c-teal)" },
+            { name: "Determination", pct: "45%", fill: "var(--c-orange)" }
+          ],
+          reflection: `"Fatigue masquerades as inadequacy. When your brain is saturated, continuing to stare at the page yields negative returns. Step away for 12 minutes, drink cold water, and review only your summary sheet. You know more than panic tells you."`
+        },
+        {
+          input: `"Our group presentation is in two days. One partner hasn't replied to a single Slack message in a week, and I'm left doing their entire slide deck while studying for my own thesis defense."`,
+          bars: [
+            { name: "Frustrated", pct: "88%", fill: "var(--c-orange)" },
+            { name: "Resentment", pct: "74%", fill: "var(--c-teal)" },
+            { name: "Resilient", pct: "52%", fill: "var(--c-teal)" }
+          ],
+          reflection: `"Carrying someone else's burden out of panic hurts your own health. Document what was done, present your section clearly, and communicate factually with the course instructor. You are responsible for your excellence, not their absence."`
+        },
+        {
+          input: `"I have to present my research in front of the department professors on Friday. I keep thinking they are going to figure out I have no idea what I'm talking about and shouldn't be here."`,
+          bars: [
+            { name: "Imposter Syndrome", pct: "90%", fill: "var(--c-teal)" },
+            { name: "Vulnerable", pct: "62%", fill: "var(--c-teal)" },
+            { name: "Curiosity", pct: "58%", fill: "var(--c-orange)" }
+          ],
+          reflection: `"The faculty didn't choose your work to test your omniscience; they chose it because the question is genuine. You don't need to know every answer—saying 'that is an intriguing next question' is the hallmark of real scholarship."`
+        }
+      ];
+
+      function switchDemo(idx) {
+        const d = DEMOS[idx];
+        document.querySelectorAll('.demo-tab-btn').forEach((btn, i) => {
+          btn.classList.toggle('active', i === idx);
+        });
+        document.getElementById('demoInputBox').innerText = d.input;
+        document.getElementById('bar1Label').innerText = d.bars[0].name;
+        document.getElementById('bar1Fill').style.width = d.bars[0].pct;
+        document.getElementById('bar1Fill').style.background = d.bars[0].fill;
+
+        document.getElementById('bar2Label').innerText = d.bars[1].name;
+        document.getElementById('bar2Fill').style.width = d.bars[1].pct;
+        document.getElementById('bar2Fill').style.background = d.bars[1].fill;
+
+        document.getElementById('bar3Label').innerText = d.bars[2].name;
+        document.getElementById('bar3Fill').style.width = d.bars[2].pct;
+        document.getElementById('bar3Fill').style.background = d.bars[2].fill;
+
+        document.getElementById('demoReflectionText').innerText = d.reflection;
+      }
+
+      // State
+      let currentLang = localStorage.getItem('mood_mirror_lang') || 'en';
+      let currentTheme = localStorage.getItem('mood_mirror_theme') || 'light';
+      let currentCampus = '';
+
+      // Initialize Theme & Language on load
+      function initPreferences() {
+        setTheme(currentTheme, false);
+        setLanguage(currentLang);
+
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('campus')) {
+          currentCampus = params.get('campus');
+          const sel = document.getElementById('campusSelect');
+          if (sel) sel.value = currentCampus;
+        }
+        updateAppUrls();
+      }
+
+      function setTheme(theme, save = true) {
+        currentTheme = theme;
+        if (save) localStorage.setItem('mood_mirror_theme', theme);
+        document.documentElement.setAttribute('data-theme', theme);
+
+        document.getElementById('btnThemeLight').classList.toggle('active', theme === 'light');
+        document.getElementById('btnThemeDark').classList.toggle('active', theme === 'dark');
+        document.getElementById('btnThemeRomantic').classList.toggle('active', theme === 'romantic');
+
+        const icons = { light: '☀️', dark: '🌙', romantic: '💖' };
+        document.getElementById('activeThemeIcon').innerText = icons[theme] || '☀️';
+
+        if (theme === 'romantic') {
+          startHeartsAnimation();
+        } else {
+          stopHeartsAnimation();
+        }
+      }
+
+      function setLanguage(lang) {
+        currentLang = lang;
+        localStorage.setItem('mood_mirror_lang', lang);
+        document.getElementById('activeLangLabel').innerText = lang.toUpperCase();
+
+        document.querySelectorAll('.lang-choice-btn').forEach(btn => {
+          btn.classList.toggle('active', btn.id === 'btnLang' + lang.charAt(0).toUpperCase() + lang.slice(1));
+        });
+
+        // Apply translations
+        const t = I18N[lang] || I18N.en;
+        document.getElementById('txtEyebrow').innerText = t.eyebrow;
+        
+        const headlineEl = document.getElementById('txtHeadline');
+        headlineEl.innerHTML = t.headline.map(l => `<span>${l}</span>`).join('');
+
+        const subEl = document.getElementById('txtHeroSubtitle');
+        if (subEl && t.heroSubtitle) {
+          subEl.innerText = `"${t.heroSubtitle}"`;
+        }
+
+        document.getElementById('txtHeroStart').innerText = t.heroStart;
+        document.getElementById('txtNavStart').innerText = t.navStart;
+        document.getElementById('txtModeWrite').innerText = t.modeWrite;
+        document.getElementById('txtModeDraw').innerText = t.modeDraw;
+        document.getElementById('txtModeTalk').innerText = t.modeTalk;
+
+        document.getElementById('fb1Title').innerHTML = t.fb1Title;
+        document.getElementById('fb1Body').innerText = t.fb1Body;
+        document.getElementById('fb2Title').innerHTML = t.fb2Title;
+        document.getElementById('fb2Body').innerText = t.fb2Body;
+        document.getElementById('fb3Title').innerHTML = t.fb3Title;
+        document.getElementById('fb3Body').innerText = t.fb3Body;
+        document.getElementById('fb4Title').innerHTML = t.fb4Title;
+        document.getElementById('fb4Body').innerText = t.fb4Body;
+        document.getElementById('fb5Title').innerHTML = t.fb5Title;
+        document.getElementById('fb5Body').innerText = t.fb5Body;
+
+        document.getElementById('txtHowItWorksHeading').childNodes[0].nodeValue = t.howItWorksHeading + ' ';
+        document.getElementById('txtHowItWorksSub').innerText = t.howItWorksSub;
+        document.getElementById('txtHowItWorksNote').innerText = t.howItWorksNote;
+
+        document.getElementById('cardWriteTitle').innerText = t.cardWriteTitle;
+        document.getElementById('cardWriteDesc').innerText = t.cardWriteDesc;
+        document.getElementById('cardWriteAction').innerText = t.cardWriteAction;
+
+        document.getElementById('cardDrawTitle').innerText = t.cardDrawTitle;
+        document.getElementById('cardDrawDesc').innerText = t.cardDrawDesc;
+        document.getElementById('cardDrawAction').innerText = t.cardDrawAction;
+
+        document.getElementById('cardTalkTitle').innerText = t.cardTalkTitle;
+        document.getElementById('cardTalkDesc').innerText = t.cardTalkDesc;
+        document.getElementById('cardTalkAction').innerText = t.cardTalkAction;
+
+        document.getElementById('step1Label').innerText = t.step1Label;
+        document.getElementById('step1Text').innerText = t.step1Text;
+        document.getElementById('step2Label').innerText = t.step2Label;
+        document.getElementById('step2Text').innerText = t.step2Text;
+        document.getElementById('step3Label').innerText = t.step3Label;
+        document.getElementById('step3Text').innerText = t.step3Text;
+
+        document.getElementById('txtPrivacyLine').innerText = t.privacyLine;
+        document.getElementById('txtBottomStart').innerText = t.bottomStart;
+      }
+
+      function changeCampus(campusSlug) {
+        currentCampus = campusSlug;
+        updateAppUrls();
+      }
+
+      function updateAppUrls() {
+        const campusParam = currentCampus ? `&campus=${encodeURIComponent(currentCampus)}` : '';
+        const baseParam = currentCampus ? `?campus=${encodeURIComponent(currentCampus)}` : '';
+
+        document.querySelectorAll('a[href^="/app"]').forEach(a => {
+          const rawHref = a.getAttribute('href');
+          if (rawHref.includes('?mode=')) {
+            const mode = rawHref.match(/mode=([a-z]+)/)[1];
+            a.setAttribute('href', `/app?mode=${mode}${campusParam}`);
+          } else {
+            a.setAttribute('href', `/app${baseParam}`);
+          }
+        });
+      }
+
+      // Modals
+      function openSettings() {
+        document.getElementById('settingsModal').classList.add('open');
+      }
+      function closeModals() {
+        document.querySelectorAll('.modal-backdrop').forEach(m => m.classList.remove('open'));
+      }
+
+      document.getElementById('openSettingsBtn').addEventListener('click', openSettings);
+      document.getElementById('openPrivacyModalBtn').addEventListener('click', () => {
+        document.getElementById('privacyModal').classList.add('open');
+      });
+      document.getElementById('openSupportModalBtn').addEventListener('click', () => {
+        document.getElementById('supportModal').classList.add('open');
+      });
+
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeModals();
+      });
+
+      document.querySelectorAll('.modal-backdrop').forEach(b => {
+        b.addEventListener('click', (e) => {
+          if (e.target === b) closeModals();
+        });
+      });
+
+      // Romantic Floating Hearts Canvas Engine
+      let heartsRAF = null;
+      let hearts = [];
+      const canvas = document.getElementById('heartsCanvas');
+      const ctx = canvas.getContext('2d');
+
+      function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
+      window.addEventListener('resize', resizeCanvas);
+      resizeCanvas();
+
+      function createHeart() {
+        return {
+          x: Math.random() * canvas.width,
+          y: canvas.height + 20,
+          size: Math.random() * 14 + 10,
+          speedY: Math.random() * 1.5 + 0.8,
+          speedX: (Math.random() - 0.5) * 0.8,
+          opacity: Math.random() * 0.6 + 0.25,
+          color: Math.random() > 0.4 ? '#E11D48' : '#FB7185'
+        };
+      }
+
+      function drawHeart(x, y, size, color, opacity) {
+        ctx.save();
+        ctx.globalAlpha = opacity;
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        const topCurveHeight = size * 0.3;
+        ctx.moveTo(x, y + topCurveHeight);
+        ctx.bezierCurveTo(x, y, x - size / 2, y, x - size / 2, y + topCurveHeight);
+        ctx.bezierCurveTo(x - size / 2, y + (size + topCurveHeight) / 2, x, y + (size + topCurveHeight) / 2, x, y + size);
+        ctx.bezierCurveTo(x, y + (size + topCurveHeight) / 2, x + size / 2, y + (size + topCurveHeight) / 2, x + size / 2, y + topCurveHeight);
+        ctx.bezierCurveTo(x + size / 2, y, x, y, x, y + topCurveHeight);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      }
+
+      function animateHearts() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        if (hearts.length < 25 && Math.random() < 0.1) {
+          hearts.push(createHeart());
+        }
+        for (let i = hearts.length - 1; i >= 0; i--) {
+          const h = hearts[i];
+          h.y -= h.speedY;
+          h.x += h.speedX;
+          drawHeart(h.x, h.y, h.size, h.color, h.opacity);
+          if (h.y < -30) {
+            hearts.splice(i, 1);
+          }
+        }
+        heartsRAF = requestAnimationFrame(animateHearts);
+      }
+
+      function startHeartsAnimation() {
+        if (!heartsRAF) {
+          hearts = Array.from({ length: 15 }, () => {
+            const h = createHeart();
+            h.y = Math.random() * canvas.height;
+            return h;
+          });
+          animateHearts();
+        }
+      }
+
+      function stopHeartsAnimation() {
+        if (heartsRAF) {
+          cancelAnimationFrame(heartsRAF);
+          heartsRAF = null;
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          hearts = [];
+        }
+      }
+
+      // --- Video Scrubbing Engine ---
+      (function() {
+        const track = document.getElementById('track');
+        const video = document.getElementById('mirrorVideo');
+        const posterFallback = document.getElementById('posterFallback');
+        const block5 = document.getElementById('block5');
+
+        let layout = {
+          trackTop: 0,
+          lastBlockBottom: 0,
+          end: 0,
+          viewport: window.innerHeight,
+          duration: 5,
+        };
+
+        let targetTime = 0;
+        let currentTime = 0;
+        let rAFId = null;
+        let isTabActive = true;
+        let isReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+        video.pause();
+        video.autoplay = false;
+        video.loop = false;
+
+        const isSaveData = navigator.connection && navigator.connection.saveData;
+        const isNarrow = window.innerWidth <= 900;
+        const preferredSrc = (isSaveData || isNarrow) ? '/media/mirror-720.mp4' : '/media/mirror-1080.mp4';
+        
+        if (!video.currentSrc || !video.currentSrc.includes(preferredSrc)) {
+          video.src = preferredSrc;
+          video.load();
+        }
+
+        video.addEventListener('loadedmetadata', function() {
+          if (video.duration && !isNaN(video.duration)) {
+            layout.duration = video.duration;
+          }
+          computeLayout();
+        });
+
+        video.addEventListener('error', function() {
+          console.warn('Video failed to load, falling back to static poster');
+          video.style.display = 'none';
+          posterFallback.style.display = 'block';
+        });
+
+        function computeLayout() {
+          layout.viewport = window.innerHeight;
+          const trackRect = track.getBoundingClientRect();
+          const scrollY = window.pageYOffset || document.documentElement.scrollTop;
+          layout.trackTop = trackRect.top + scrollY;
+
+          const b5Rect = block5.getBoundingClientRect();
+          layout.lastBlockBottom = (b5Rect.bottom + scrollY) - layout.trackTop;
+
+          if (layout.lastBlockBottom < 300) {
+            layout.lastBlockBottom = layout.viewport * 2.8;
+          }
+
+          layout.end = layout.lastBlockBottom + (0.75 * layout.viewport);
+          const trackHeight = layout.end + layout.viewport;
+          track.style.height = Math.round(trackHeight) + 'px';
+
+          if (video.duration && !isNaN(video.duration)) {
+            layout.duration = video.duration;
+          }
+        }
+
+        function onScroll() {
+          if (isReducedMotion) return;
+
+          const scrollY = window.pageYOffset || document.documentElement.scrollTop;
+          const p = Math.max(0, Math.min(1, (scrollY - layout.trackTop) / layout.end));
+          const knee = layout.lastBlockBottom / layout.end;
+
+          let clipProgress = 0;
+          if (knee > 0 && p < knee) {
+            clipProgress = (p / knee) * 0.46;
+          } else if (knee < 1) {
+            clipProgress = 0.46 + ((p - knee) / (1 - knee)) * (1.0 - 0.46);
+          } else {
+            clipProgress = p;
+          }
+
+          clipProgress = Math.max(0, Math.min(1, clipProgress));
+          const maxPlayableTime = Math.max(0, layout.duration - (1 / 48));
+          targetTime = clipProgress * maxPlayableTime;
+
+          if (!rAFId && isTabActive) {
+            rAFId = requestAnimationFrame(smoothScrub);
+          }
+        }
+
+        function smoothScrub() {
+          rAFId = null;
+          if (isReducedMotion || !isTabActive) return;
+
+          const diff = targetTime - currentTime;
+          currentTime += diff * 0.22;
+
+          if (!video.seeking && Math.abs(currentTime - video.currentTime) > (1 / 60)) {
+            try {
+              video.currentTime = currentTime;
+            } catch (e) {}
+          }
+
+          if (Math.abs(targetTime - currentTime) > 0.001) {
+            rAFId = requestAnimationFrame(smoothScrub);
+          }
+        }
+
+        video.addEventListener('seeked', function() {
+          if (Math.abs(targetTime - currentTime) > 0.01 && !rAFId && isTabActive) {
+            rAFId = requestAnimationFrame(smoothScrub);
+          }
+        });
+
+        window.addEventListener('scroll', onScroll, { passive: true });
+        window.addEventListener('resize', () => {
+          computeLayout();
+          onScroll();
+        }, { passive: true });
+        window.addEventListener('orientationchange', () => {
+          setTimeout(() => {
+            computeLayout();
+            onScroll();
+          }, 150);
+        });
+
+        if (document.fonts && document.fonts.ready) {
+          document.fonts.ready.then(() => {
+            computeLayout();
+            onScroll();
+          });
+        }
+
+        document.addEventListener('visibilitychange', function() {
+          if (document.hidden) {
+            isTabActive = false;
+            if (rAFId) {
+              cancelAnimationFrame(rAFId);
+              rAFId = null;
+            }
+          } else {
+            isTabActive = true;
+            computeLayout();
+            onScroll();
+          }
+        });
+
+        // Initialize preferences and layout
+        initPreferences();
+        computeLayout();
+        onScroll();
+      })();
+    </script>
+  </body>
+</html>
